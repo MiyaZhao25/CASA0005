@@ -1,0 +1,247 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+#explanation of scenarios
+#https://www.carbonbrief.org/explainer-how-shared-socioeconomic-pathways-explore-future-climate-change/
+
+# climate data - want the tx. USING ACCESS at first 
+ # https://www.worldclim.org/data/cmip6/cmip6_clim2.5m.html
+
+
+#download the cities 
+#probably need to check the projection 
+"https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Cities/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson"
+```
+
+```{r}
+#load country data
+library(sf)
+library(here)
+library(raster)
+library(terra)
+library(tidyverse)
+
+st_layers("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/casa_0005_coursework/week 3/gadm41_CHL_shp")
+
+## load the cities 
+world_cites <- st_read("https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Cities/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson")
+```
+```{r}
+choutline <- st_read("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/casa_0005_coursework/week 3/gadm41_CHL_shp/gadm41_CHL_0.shp")
+
+choutline3 <- st_read("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/casa_0005_coursework/week 3/gadm41_CHL_shp/gadm41_CHL_3.shp")
+
+
+#check projection WGS84
+print(choutline)
+#print out the projection
+st_crs(choutline)$proj4string
+                     
+```
+```{r}
+#plot out chile
+choutline %>%
+  st_simplify(., dTolerance = 1000) %>%
+  st_geometry()%>%
+  plot()
+```
+
+```{r}
+#check out the raster climate data
+
+jan<-terra::rast("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/casa_0005_coursework/week 3/wc2.1_5m_tavg/wc2.1_5m_tavg_01.tif")
+jan
+
+library(tidyverse)
+library(fs)
+
+#read in the first scenario
+listfiles<-dir_info("week 3/wc2.1_5m_tavg/") %>%
+  filter(str_detect(path, ".tif")) %>%
+  dplyr::select(path)%>%
+  pull()
+
+#have a look at the file names 
+listfiles
+```
+```{r}
+#create a SpatRaster object 
+worldclimtemp <- listfiles %>%
+  terra::rast()
+  
+#have a look at the raster stack
+worldclimtemp
+```
+```{r}
+month <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+names(worldclimtemp) <- month
+```
+
+```{r}
+#next find the cities we want to work with 
+chile_cities <- world_cites %>% filter(., CNTRY_NAME == "Chile")
+
+#lets plot to see what it looks like
+chile_cities %>% plot() 
+
+CIcitytemp<- terra::extract(worldclimtemp, chile_cities)
+
+CIcitytemp2 <- CIcitytemp %>% 
+  as_tibble()%>% 
+  add_column(Site = chile_cities$CITY_NAME, .before = "Jan")
+```
+
+```{r}
+#lets plot out chile, then do some descriptive stats
+
+#crop to just the outline of chile 
+CItemp <- choutline %>%
+  # now crop our temp data to the extent
+  terra::crop(worldclimtemp,.)
+
+# plot the output
+plot(CItemp)
+```
+```{r}
+#Goal: descriptive stats show the difference in maximum annual temperature for key cities between SSP1 and SSP5 for the years 2081-2100
+
+##SSP1 
+ssp1 <-terra::rast("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/casa_0005_coursework/week 3/wc2.1_2.5m_tmax_ACCESS-CM2_ssp126_2081-2100.tif")
+
+#climate_ssp1 <- ssp1 %>%
+#  terra::rast()
+
+month <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+names(ssp1) <- month
+
+
+##SSP5 
+ssp5 <-terra::rast("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/casa_0005_coursework/week 3/wc2.1_2.5m_tmax_ACCESS-CM2_ssp585_2081-2100.tif")
+
+
+month <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+names(ssp5) <- month
+
+
+```
+
+
+```{r}
+#just get the values for the specific cities in chile 
+climate_ssp1_city_temp<- terra::extract(ssp1, chile_cities)
+
+climate_ssp1_city_temp2 <- climate_ssp1_city_temp %>% 
+  as_tibble()%>% 
+  add_column(Site = chile_cities$CITY_NAME, .before = "Jan")
+
+
+climate_ssp5_city_temp<- terra::extract(ssp5, chile_cities)
+
+climate_ssp5_city_temp2 <- climate_ssp5_city_temp %>% 
+  as_tibble()%>% 
+  add_column(Site = chile_cities$CITY_NAME, .before = "Jan")
+
+diff_city_temp = climate_ssp5_city_temp - climate_ssp1_city_temp
+diff_city_temp2 <- diff_city_temp %>% 
+  as_tibble()%>% 
+  add_column(Site = chile_cities$CITY_NAME, .before = "Jan")
+```
+
+
+```{r}
+
+CItemp <- choutline %>%
+  # now crop our temp data to the extent
+  terra::crop(ssp1,.)
+
+# plot the output
+plot(CItemp)
+```
+```{r}
+climate_ssp1_city_temp2
+climate_ssp5_city_temp2
+
+#difference between ssp5 and ssp1
+diff_city_temp2
+```
+```{r}
+#inserting what Andy did in class 
+
+## make it into pivot longer 
+## question, why do we pivot longer rather than squish? 
+tidy_city_diff <- diff_city_temp2[,3:14] %>% 
+  tidyr::pivot_longer((everything()), 
+                        names_to="Months", 
+                        values_to="temp_diff")
+
+
+#goal create a facet plot (subplots) -- group by the months to see subplots for the months 
+
+```
+
+
+
+
+
+```{r}
+
+## next: find the maximum annual temp for each city  and then we want to create a histogram I think 
+
+annual_max <- max(climate_ssp1_city_temp2$Jan)
+
+
+#hist(exactAus[[3]], col="red", main ="March temperature")
+
+```
+
+
+```{r}
+#squish the data so we can do some summary statistics 
+ssp1_squishdata<-climate_ssp1_city_temp2%>%
+  pivot_longer(
+  cols = 3:14,
+  names_to = "Month",
+  values_to = "Temp"
+)
+
+#annual max temperatures
+maxofall <- ssp1_squishdata %>%
+  group_by(Site) %>%
+  summarize(max = max(Temp, na.rm=TRUE))
+
+maxofall
+
+
+## to be done:  create a histogram comparing the highs from ssp1 to ssp5 
+```
+
+```{r}
+#squish the data so we can do some summary statistics 
+ssp5_squishdata<-climate_ssp5_city_temp2%>%
+  pivot_longer(
+  cols = 3:14,
+  names_to = "Month",
+  values_to = "Temp"
+)
+
+#annual max temperatures
+maxofall5 <- ssp5_squishdata %>%
+  group_by(Site) %>%
+  summarize(max = max(Temp, na.rm=TRUE))
+
+maxofall5
+```
+

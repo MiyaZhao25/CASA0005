@@ -1,0 +1,180 @@
+
+
+title: "practical 2"
+output: html_notebook
+date "2023-10-11"
+
+```{r}
+#load the libraries
+library(tidyverse)
+library(dplyr)
+#install.packages("here")
+library(here)
+#install.packages("janitor")
+library(janitor)
+
+```
+
+
+```{r}
+#try basic plotting 
+Data1 <- c(1:100)
+Data2 <- c(101:200)
+#Plot the data
+plot(Data1, Data2, col="red")
+
+Data3 <- rnorm(100, mean = 53, sd=34)
+Data4 <- rnorm(100, mean = 64, sd=14)
+#plot
+plot(Data3, Data4, col="blue")
+
+```
+
+```{r}
+df <- data.frame(Data1, Data2)
+plot(df, col="green")
+
+```
+
+#work on task 
+```{r}
+#defining as OSK because its old school using a file. he also shows us how to load in based on link online
+LondonDataOSK<- read.csv("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/casa_0005_coursework/week 2/LondonData_subset.csv", sep=",")
+
+Datatypelist <- LondonDataOSK %>% 
+  summarise_all(class) %>%
+  pivot_longer(everything(), 
+               names_to="All_variables", 
+               values_to="Variable_class")
+```
+
+```{r}
+LondonDataOSK %>%
+  colnames()%>%
+  # just look at the head, top5
+  head()
+```
+
+```{r}
+```
+
+
+```{r}
+#the data we want is at the end of the file
+#LondonBoroughs<-LondonDataOSK[626:658,]
+
+LondonBoroughs<- LondonDataOSK %>% 
+  filter(str_detect(`New.code`, "^E09"))
+
+LondonBoroughs<-LondonBoroughs %>%
+  distinct()
+
+#test filtering
+Femalelifeexp<- LondonBoroughs %>% 
+  filter('female_life_expectancy_2009_13'>90)
+
+```
+
+```{r}
+#select columns based on string names
+LondonBoroughs_contains<-LondonBoroughs %>% 
+  dplyr::select(contains("expectancy"), 
+         contains("obese"),
+         contains("Ward name")) 
+
+#use janitor to clean up the names
+LondonBoroughs <- LondonBoroughs %>%
+  dplyr::rename(Borough=`Ward.name`)%>%
+  clean_names()
+```
+
+```{r}
+#use mutate() to add a new column 
+
+Life_expectancy <- LondonBoroughs %>% 
+  #new column with average of male and female life expectancy
+  mutate(averagelifeexpectancy= (female_life_expectancy_2009_13 +
+                                    male_life_expectancy_2009_13)/2)%>%
+  #new column with normalised life expectancy
+  mutate(normalisedlifeepectancy= averagelifeexpectancy /
+           mean(averagelifeexpectancy))%>%
+  #select only columns we want
+  dplyr::select(new_code,
+         borough,
+         averagelifeexpectancy, 
+         normalisedlifeepectancy)%>%
+  #arrange in descending order
+  #ascending is the default and would be
+  #arrange(normalisedlifeepectancy)
+  arrange(desc(normalisedlifeepectancy))
+```
+
+```{r}
+#UK average is 81.16
+Life_expectancy2 <- Life_expectancy %>%
+  mutate(UKcompare = case_when(averagelifeexpectancy >81.16 ~ "above UK average",
+                               TRUE ~ "below UK average"))
+Life_expectancy2
+
+```
+```{r}
+#calculate the difference from the UK mean 81.16
+Life_expectancy2_group <- Life_expectancy2 %>%
+  mutate(UKdiff = averagelifeexpectancy-81.16) %>%
+  group_by(UKcompare)%>%
+  summarise(range=max(UKdiff)-min(UKdiff), count=n(), Average=mean(UKdiff))
+
+Life_expectancy2_group
+```
+
+```{r}
+#categorize boroughs based on how much above the uk average they are
+Life_expectancy3 <- Life_expectancy %>%
+  mutate(UKdiff = averagelifeexpectancy-81.16)%>%
+  mutate(across(where(is.numeric), round, 3))%>%
+  mutate(across(UKdiff, \(x) round(x, digits=0)))%>%
+  mutate(UKcompare = case_when(averagelifeexpectancy >= 81 ~ 
+                                 str_c("equal or above UK average by",
+                                       UKdiff, 
+                                       "years", 
+                                       sep=" "), 
+                               TRUE ~ str_c("below UK average by",
+                                            UKdiff,
+                                            "years",
+                                            sep=" ")))%>%
+  group_by(UKcompare)%>%
+  summarise(count=n())
+```
+
+```{r}
+Life_expectancy4 <- Life_expectancy %>%
+  mutate(UKdiff = averagelifeexpectancy-81.16)%>%
+  mutate(across(where(is.numeric),  \(x) round(x, digits=3)))%>%
+  mutate(across(UKdiff,  \(x) round(x, digits=0)))
+```
+
+```{r}
+#plot 
+plot(LondonBoroughs$male_life_expectancy_2009_13,
+     LondonBoroughs$x_children_in_reception_year_who_are_obese_2011_12_to_2013_14)
+
+
+ LondonBoroughs$x_children_in_reception_year_who_are_obese_2011_12_to_2013_14
+```
+```
+
+```{r}
+#install.packages("plotly")
+library(plotly)
+
+plot_ly(LondonBoroughs, 
+        #data for x axis
+        x = ~male_life_expectancy_2009_13, 
+        #data for y axis
+        y = ~x_children_in_reception_year_who_are_obese_2011_12_to_2013_14, 
+        #attribute to display when hovering 
+        text = ~borough, 
+        type = "scatter", 
+        mode = "markers")
+```
+

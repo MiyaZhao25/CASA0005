@@ -1,0 +1,175 @@
+---
+title: "Homework week 2"
+output: html_notebook
+---
+
+```{r}
+library(RColorBrewer)
+library(classInt)
+library(sp)
+#library(rgeos)
+library(tmap)
+library(tmaptools)
+library(sf)
+library(rgdal)
+library(geojsonio)
+library(terra)
+library(readr)
+library(tidyverse)
+library(janitor)
+
+```
+
+
+```{r}
+counties <- st_read("https://gisdata.kingcounty.gov/arcgis/rest/services/OpenDataPortal/politicl___base/MapServer/122/query?outFields=*&where=1%3D1&f=geojson")
+
+
+```
+
+
+
+```{r}
+qtm(counties)
+
+```
+```{r}
+#data mutation:
+# filter down to science students, schools, all grade levels, county
+
+grades <- read_csv("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/casa_0005_coursework/week 2/Report_Card_Assessment_Data_2018-19_School_Year_20231018.csv",  locale = locale(encoding = "latin1"),  na = "NULL")
+
+#read in from webpage  but only brought in 1000 records? 
+#grades <- read_csv("https://data.wa.gov/resource/5y3z-mgxd.csv", locale = locale(encoding = "latin1"))
+
+Datatypelist <- grades %>% 
+  summarise_all(class) %>%
+  pivot_longer(everything(), 
+               names_to="All_variables", 
+               values_to="Variable_class")
+
+#make it smaller (Reduce columns) to the county only 
+#reviewing answer with class 
+county_only<- grades %>%
+    clean_names() %>%
+  select(county, organization_level, test_subject, count_met_standard, count_of_students_expected_to_test, 
+         grade_level) %>%
+  filter(county != "Multiple") %>% 
+    filter(organization_level == "School") %>%
+  filter(test_subject == "Science") %>%
+    filter(grade_level == "All Grades") %>% 
+    group_by(county) %>%
+  na.omit() %>%  #need to omit the na to create a summ....
+  summarise(total_county_met_standard = sum(count_met_standard), 
+              total_county_to_test= sum(count_of_students_expected_to_test)) %>%
+  mutate(percent_met_per_county = 100*(total_county_met_standard/total_county_to_test) )
+```
+  
+```{r} 
+#step 2 calcualte the state average
+
+#46.98
+state_average <- county_only %>% 
+  summarise(state_average = mean(percent_met_per_county)) %>% pull()
+
+# actual way to do this.. 48.9%
+state_average_2 <- county_only %>% 
+  summarise(total_tested  =sum(total_county_to_test), 
+            total_met_standard =  sum(total_county_met_standard)) %>% 
+  mutate(state_avg =  100*(total_met_standard/total_tested))
+
+```
+  
+```{r}
+#step 3 categorize each county into above or below state average
+
+county_only_above_below_state <- county_only %>%
+  mutate(difference_to_state = (percent_met_per_county-state_average_2$state_avg)) %>%
+  mutate(across(difference_to_state, round, 0)) %>%
+  mutate(above_below = case_when(difference_to_state< 0 ~"below", 
+                                  difference_to_state > 0 ~ "above", 
+                                 difference_to_state == 0 ~ "equal"))
+
+```
+  
+```{r}
+#step 4: join the data on to the shapes - based on county label 
+
+counties_plus_stats <- counties %>% 
+  clean_names(.) %>%
+  left_join(., county_only_above_below_state, 
+            by = c("countylabel" = "county"))
+```
+   
+```{r}
+# step 5 make the map! 
+qtm(counties_plus_stats, fill = "above_below")
+```
+   
+```{r}
+#nicer map - tmap 
+
+tm_shape(counties_plus_stats)+
+ # tm_shape(BoroughDataMap) + 
+  tm_polygons("above_below", 
+              style="jenks",
+              palette="YlOrBr",
+              midpoint=NA,
+    #     title="Rate per 1,000 people",
+              alpha = 0.5) + 
+  tm_compass(position = c("left", "bottom"),type = "arrow") + 
+  tm_scale_bar(position = c("left", "bottom")) +
+  tm_layout(title = "Counties above or below", legend.position = c("right", "bottom"))
+
+```
+   
+   
+   
+   ##independent work on my own 
+    
+```{r}
+
+## my attempts below...
+unique(grades$OrganizationLevel)
+unique(grades$TestSubject)
+
+#152k science grade records
+#science_grades <- grades %>% filter(grades$TestSubject== "Science" && 
+ #                                       grades$County !== "Multiple" && 
+  #                                    grades$OrganizationLevel = "School")
+
+#also need to filter county != multiple and OrganizationLevel = 'School' 
+
+unique(science_grades$county)
+
+#science_grades <- science_grades %>%
+ # clean_names()
+
+science_grades <- science_grades %>% select(c('county', ''))
+```
+
+```{r}
+
+science_grades %>% group_by(county) %>% summarise(sum = sum(science_grades$count_of_students_expected_to_test))
+
+s <- sum(science_grades$count_of_students_expected_to_test, rm.na = TRUE)
+s
+
+total_students_expected_to_test <- sum(science_grades$count_of_students_expected_to_test, rm.na = TRUE)
+
+summary(science_grades)
+```
+
+
+```{r}
+#create dataset grouped by 
+  #County with the 
+  #total Count of Students expected to test, 
+  #Count met standard, and then the calculated percentage.... 
+
+#then find the average for washington
+#then decide if each county is above or below washington avergage
+
+
+```
+

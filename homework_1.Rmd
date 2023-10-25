@@ -1,0 +1,63 @@
+---
+title: "homework 1"
+output: html_notebook
+date "2023-10-11"
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+```{r}
+#load in libraries
+library(sf)
+library(tidyverse)
+library(tmap)
+```
+
+```{r}
+#load in the shapefile 
+shape <- st_read("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/casa_0005_coursework/week 1/hmwk/statsnz-territorial-authority-2018-generalised-SHP/territorial-authority-2018-generalised.shp")
+
+#could generalize/  simplify the geometry to make it computationally faster
+#shape_simple <- st_simplify(shape, dTolerance= 1000)
+
+```
+
+```{r}
+summary(shape)
+plot(shape)
+```
+
+```{r}
+shape %>% 
+  st_geometry() %>%
+  plot()
+```
+
+```{r}
+#this needs to be your file path again
+mycsv <-  read_csv("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/casa_0005_coursework/week 1/hmwk/Statistical Area 1 dataset for Census 2018-total-New Zealand_updated_4-11-21/subset_2018_census_part_3a_total_NZ.csv", skip = 1)  
+
+```
+
+```{r}
+#could use summarize_all() to see what the data type are
+
+shape <- shape%>%
+  merge(.,
+        mycsv,
+        by.x="TA2018_V_1", 
+        by.y="Area_Description")
+```
+
+```{r}
+## yay made a map!! 
+
+tmap_mode("plot")
+# change the fill to your column name if different
+my_map <- shape %>%
+  qtm(.,fill = "Paid employee")
+
+my_map
+```
+

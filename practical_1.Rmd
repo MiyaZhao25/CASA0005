@@ -10,7 +10,7 @@ Try executing this chunk by clicking the *Run* button within the chunk or by pla
 ```{r}
 library(sf)
 # change this to your file path!!!
-shape <- st_read("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/casa_0005_coursework/week 1/statistical-gis-boundaries-london/ESRI/London_Borough_Excluding_MHW.shp")
+shape <- st_read("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/coursework/week 1/statistical-gis-boundaries-london/ESRI/London_Borough_Excluding_MHW.shp")
 
 
 ```
@@ -37,7 +37,7 @@ shape %>%
 ```{r}
 library(tidyverse)
 #this needs to be your file path again
-mycsv <-  read_csv("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/casa_0005_coursework/week 1/fly_tipping_borough_pivot.csv", skip = 1)  
+mycsv <-  read_csv("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/coursework/week 1/fly_tipping_borough_pivot.csv", skip = 1)  
 
 ```
 

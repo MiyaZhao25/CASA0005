@@ -1,0 +1,46 @@
+
+# homework 4 
+
+```{r}
+#install package to regularize countries https://github.com/vincentarelbundock/countrycode
+install.packages("countrycode")
+library(countrycode)
+library(readr)
+library(tidyverse)
+
+
+```
+
+
+```{r}
+# read in the inequality index
+# read in csv sheet 
+index_data <- read_csv("https://hdr.undp.org/sites/default/files/2021-22_HDR/HDR21-22_Composite_indices_complete_time_series.csv")
+
+
+#pull in the countries of the world from https://hub.arcgis.com/datasets/2b93b06dc0dc4e809d3c8db5cb96ba69_0/explore?location=-0.166769%2C0.000000%2C1.00
+world_countries <- st_read("https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Countries_(Generalized)/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson")
+
+
+
+```
+
+```{r}
+#add column for iso3 country codes onto the index_data dataset
+
+index_data2 <- index_data %>% 
+  select(., c("iso3", "country", "hdicode", "region",  "gii_2019", "gii_2020")) %>%
+  mutate( gii_diff = (index_data$gii_2019 - index_data$gii_2010)) %>% 
+  mutate(iso2 = countrycode(index_data$country, origin = 'country.name', destination = 'iso2c'))
+
+#index_data2$gii_diff
+#index_data2$iso2
+#index_data2 %>% select(c("country", "iso2" ))
+```
+
+```{r}
+#join the index data to the world countries
+world_countries <- world_countries %>% left_join(., index_data2, by =join_by("ISO" == "iso2") )
+
+```
+

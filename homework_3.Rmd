@@ -34,9 +34,9 @@ st_layers("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/casa_0005_coursewor
 world_cites <- st_read("https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Cities/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson")
 ```
 ```{r}
-choutline <- st_read("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/casa_0005_coursework/week 3/gadm41_CHL_shp/gadm41_CHL_0.shp")
+choutline <- st_read("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/coursework/week 3/gadm41_CHL_shp/gadm41_CHL_0.shp")
 
-choutline3 <- st_read("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/casa_0005_coursework/week 3/gadm41_CHL_shp/gadm41_CHL_3.shp")
+choutline3 <- st_read("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/coursework/week 3/gadm41_CHL_shp/gadm41_CHL_3.shp")
 
 
 #check projection WGS84
@@ -56,7 +56,7 @@ choutline %>%
 ```{r}
 #check out the raster climate data
 
-jan<-terra::rast("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/casa_0005_coursework/week 3/wc2.1_5m_tavg/wc2.1_5m_tavg_01.tif")
+jan<-terra::rast("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/coursework/week 3/wc2.1_5m_tavg/wc2.1_5m_tavg_01.tif")
 jan
 
 library(tidyverse)
@@ -115,7 +115,7 @@ plot(CItemp)
 #Goal: descriptive stats show the difference in maximum annual temperature for key cities between SSP1 and SSP5 for the years 2081-2100
 
 ##SSP1 
-ssp1 <-terra::rast("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/casa_0005_coursework/week 3/wc2.1_2.5m_tmax_ACCESS-CM2_ssp126_2081-2100.tif")
+ssp1 <-terra::rast("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/coursework/week 3/wc2.1_2.5m_tmax_ACCESS-CM2_ssp126_2081-2100.tif")
 
 #climate_ssp1 <- ssp1 %>%
 #  terra::rast()
@@ -127,7 +127,7 @@ names(ssp1) <- month
 
 
 ##SSP5 
-ssp5 <-terra::rast("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/casa_0005_coursework/week 3/wc2.1_2.5m_tmax_ACCESS-CM2_ssp585_2081-2100.tif")
+ssp5 <-terra::rast("~/Documents/_UCL_grad school/UCL/Term 1 /GIS CASA/coursework/week 3/wc2.1_2.5m_tmax_ACCESS-CM2_ssp585_2081-2100.tif")
 
 
 month <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun", 

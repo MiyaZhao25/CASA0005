@@ -7,7 +7,8 @@ install.packages("countrycode")
 library(countrycode)
 library(readr)
 library(tidyverse)
-
+library(here)
+library(sf)
 
 ```
 
@@ -16,6 +17,8 @@ library(tidyverse)
 # read in the inequality index
 # read in csv sheet 
 index_data <- read_csv("https://hdr.undp.org/sites/default/files/2021-22_HDR/HDR21-22_Composite_indices_complete_time_series.csv")
+
+#to make edit: drop the na when read in values
 
 
 #pull in the countries of the world from https://hub.arcgis.com/datasets/2b93b06dc0dc4e809d3c8db5cb96ba69_0/explore?location=-0.166769%2C0.000000%2C1.00

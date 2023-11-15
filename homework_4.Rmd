@@ -47,3 +47,13 @@ world_countries <- world_countries %>% left_join(., index_data2, by =join_by("IS
 
 ```
 
+```{r}
+map_plot2 <- ggplot() +
+  geom_sf(data = GIIDif, aes(fill = GIIDif$compare)) + 
+  geom_point(na.rm = FALSE) +
+  scale_fill_continuous() +  
+  theme_minimal()
+
+print(map_plot2)
+```
+
